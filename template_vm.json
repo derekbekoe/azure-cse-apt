@@ -1,0 +1,181 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "adminUsername": {
+        "type": "string"
+      },
+      "adminPublicKeyPath": {
+        "type": "string"
+      },
+      "adminPublicKey": {
+        "type": "string"
+      },
+      "location": {
+        "type": "string"
+      },
+      "osDiskName": {
+        "type": "string"
+      },
+      "networkInterfaceName": {
+        "type": "string"
+      },
+      "virtualMachineName": {
+        "type": "string"
+      },
+      "virtualMachineSize": {
+        "type": "string"
+      },
+      "vmSetupScript": {
+        "type": "securestring"
+      }
+    },
+    "variables": {
+      "nsgName": "[concat(parameters('virtualMachineName'),'-nsg')]",
+      "vnetName": "[concat(parameters('virtualMachineName'),'-vnet')]",
+      "ipName": "[concat(parameters('virtualMachineName'),'-ip')]",
+      "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+      "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks',variables('vnetName'))]",
+      "subnetRef": "[concat(variables('vnetId'), '/subnets/','default')]"
+    },
+    "resources": [
+      {
+        "name": "[parameters('networkInterfaceName')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2019-07-01",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]",
+          "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                },
+                "privateIPAllocationMethod": "Dynamic"
+              }
+            }
+          ],
+          "networkSecurityGroup": {
+            "id": "[variables('nsgId')]"
+          }
+        }
+      },
+      {
+        "name": "[variables('nsgName')]",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "apiVersion": "2019-02-01",
+        "location": "[parameters('location')]",
+        "properties": {
+          "securityRules": []
+        }
+      },
+      {
+        "name": "[variables('vnetName')]",
+        "type": "Microsoft.Network/virtualNetworks",
+        "apiVersion": "2019-09-01",
+        "location": "[parameters('location')]",
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": [ "172.16.5.0/24" ]
+          },
+          "subnets": [
+            {
+              "name": "default",
+              "properties": {
+                "addressPrefix": "172.16.5.0/24"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "[parameters('virtualMachineName')]",
+        "type": "Microsoft.Compute/virtualMachines",
+        "apiVersion": "2019-07-01",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "[parameters('virtualMachineSize')]"
+          },
+          "storageProfile": {
+            "osDisk": {
+              "name": "[parameters('osDiskName')]",
+              "createOption": "fromImage",
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            },
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS",
+              "version": "latest"
+            }
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+              }
+            ]
+          },
+          "osProfile": {
+            "computerName": "[parameters('virtualMachineName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "path": "[parameters('adminPublicKeyPath')]",
+                    "keyData": "[parameters('adminPublicKey')]"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "resources": [
+          {
+            "name": "update-vm",
+            "type": "extensions",
+            "location": "[parameters('location')]",
+            "apiVersion": "2019-07-01",
+            "dependsOn": [
+              "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName'))]"
+            ],
+            "tags": {
+              "displayName": "update-vm"
+            },
+            "properties": {
+              "publisher": "Microsoft.Azure.Extensions",
+              "type": "CustomScript",
+              "typeHandlerVersion": "2.1",
+              "autoUpgradeMinorVersion": true,
+              "settings": {
+                "skipDos2Unix": false,
+                "timestamp": 123456789
+              },
+              "protectedSettings": {
+                "script": "[parameters('vmSetupScript')]"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "adminUsername": {
+        "type": "string",
+        "value": "[parameters('adminUsername')]"
+      }
+    }
+  }
