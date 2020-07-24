@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     # azure login
     logging.info("Please log in to Azure...")
-    resource_group = f"{RESOURCE_GROUP_PREFIX}{datetime.now().strftime('%d_%m_%Y_%H')}"
+    resource_group = f"{RESOURCE_GROUP_PREFIX}{datetime.now().strftime('%d_%m_%Y_%H_%M')}"
     az('login --use-device-code --output none'.split(), _out=sys.stdout, _err=sys.stderr)
     az(f'account set --subscription {subscription} --output none'.split(), _out=sys.stdout, _err=sys.stderr)
 
