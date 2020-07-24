@@ -23,17 +23,21 @@ The script will create a resource group with the prefix vm_test_ and deploy VMs 
 
 At the end, it will poll for status so you can see the success/fail rate.
 
-**Notes:**
+### Notes:
 
-Where's the script that runs on the VM? - See [app.py](app.py).
+- Where's the script that runs on the VM? - See [app.py](app.py).\
+If you want to make changes to the vm init script, do it there then rebuild and run the container.
 
-How to view deployment status and errors in Azure Portal? - https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deployment-history?tabs=azure-portal
+- How to view deployment status and errors in Azure Portal? - https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deployment-history?tabs=azure-portal
 
-If you attempt to deploy too many VMs in your subscription, you may hit Azure Quota errors.
+- If you attempt to deploy too many VMs in your subscription, you may hit Azure Quota errors.
+
+- **VMs cost money so delete the resource group once done. The script WILL NOT do this!!**
 
 ## Run in docker (recommended)
 
 ```bash
 docker build -t vm-test .
 docker run -it vm-test
+# the script will allow you to enter the subscription id
 ```
