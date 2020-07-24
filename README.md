@@ -23,6 +23,10 @@ The script will create a resource group with the prefix vm_test_ and deploy VMs 
 
 At the end, it will poll for status so you can see the success/fail rate.
 
+**Notes:**
+
+Where's the script that runs on the VM? - See [app.py](app.py).
+
 How to view deployment status and errors in Azure Portal? - https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/deployment-history?tabs=azure-portal
 
 If you attempt to deploy too many VMs in your subscription, you may hit Azure Quota errors.
